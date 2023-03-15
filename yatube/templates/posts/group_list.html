@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load thumbnail %}
+<h1>{{ group.title }}</h1>
+<p>{{ group.description }}</p>
+  {% for post in page_obj %}
+  {% include 'includes/post_card.html' %}
+  {% endfor %}
+  {% include 'includes/paginator.html' %}
+{% endblock %}
