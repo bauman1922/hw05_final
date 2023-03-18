@@ -43,8 +43,7 @@ def profile(request, username):
         'counter': counter,
         'following': following,
     }
-    context.update(get_paginator(
-        author.posts.select_related('author'), request))
+    context.update(get_paginator(author.posts.all(), request))
     return render(request, template, context)
 
 
@@ -52,7 +51,7 @@ def post_detail(request, post_id):
     template = 'posts/post_detail.html'
     post = get_object_or_404(Post, pk=post_id)
     post_author = post.author
-    post_count = Post.objects.filter(author=post_author).count()
+    post_count = post_author.posts.count()
     title = f'Пост {post.text[:30]}'
     comments = post.comments.all()
     comment_form = CommentForm(request.POST or None)
@@ -136,7 +135,7 @@ def profile_follow(request, username):
     if not Follow.objects.filter(
             user=request.user,
             author=author).exists() and author != request.user:
-        Follow.objects.create(
+        Follow.objects.get_or_create(
             user=request.user,
             author=author)
     return redirect('posts:profile', username=author.username)

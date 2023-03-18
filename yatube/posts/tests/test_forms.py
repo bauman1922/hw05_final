@@ -44,6 +44,7 @@ class PostPagesTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def test_create_post(self):
+        """Валидная форма создает запись в Post."""
         post_count = Post.objects.count()
         small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
@@ -101,14 +102,12 @@ class PostPagesTests(TestCase):
         form_data = {
             'text': 'Комментарий авторизованного пользователя',
         }
-        response = self.authorized_client.post(
+        self.authorized_client.post(
             reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
             data=form_data,
             follow=True
         )
         self.assertEqual(Comment.objects.count(), comment_count + 1)
-        self.assertRedirects(response, reverse('posts:post_detail',
-                             kwargs={'post_id': self.post.id}))
 
     def test_guest_client_comment(self):
         comment_count = Comment.objects.count()

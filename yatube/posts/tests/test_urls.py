@@ -10,6 +10,7 @@ class PostURLTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
+        cls.user1 = User.objects.create_user(username='bauman1922')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test_slug',
@@ -26,6 +27,8 @@ class PostURLTests(TestCase):
         # Создаем авторизованый клиент
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        self.authorized_client_not_author = Client()
+        self.authorized_client_not_author.force_login(self.user1)
 
     def test_home_url_exists_at_desired_location(self):
         """Страницы группы и главная доступны всем."""
@@ -83,7 +86,16 @@ class PostURLTests(TestCase):
                 response = self.guest_client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
-    def test_page_404_uses_castom_tamplate(self):
-        """Cтраница 404 использует кастомный шаблон."""
+    def test_page_404(self):
+        """Cтраница 404 использует кастомный шаблон и вернёт ошибку 404."""
         response = self.guest_client.get('/unexisting_page/')
         self.assertTemplateUsed(response, 'core/404.html')
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+
+    def test_create_post_url_redirect_not_author(self):
+        """Адрес редактирования поста для авторизованного пользователя
+        (не автора), ведет на редиректную страницу."""
+        response = self.authorized_client_not_author.get(
+            f'/posts/{self.post.id}/edit/', follow=True)
+        self.assertRedirects(
+            response, f'/posts/{self.post.id}/')

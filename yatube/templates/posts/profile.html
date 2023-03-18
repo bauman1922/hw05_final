@@ -5,6 +5,7 @@
     <div class="mb-5">
         <h1>Все посты пользователя {{ author }}</h1>
         <h3>Всего постов: {{ counter }}</h3>
+        {% if user.is_authenticated and author != user %}
         {% if following %}
           <a
             class="btn btn-lg btn-light"
@@ -18,6 +19,7 @@
               href="{% url 'posts:profile_follow' author.username %}" role="button">
               Подписаться
             </a>
+         {% endif %}
          {% endif %}
       </div>        
         {% for post in page_obj %} 

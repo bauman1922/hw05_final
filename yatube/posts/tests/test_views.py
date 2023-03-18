@@ -61,6 +61,9 @@ class PostPagesTests(TestCase):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        self.authorized_user = User.objects.create_user(username='warrior')
+        self.authorized_client_1 = Client()
+        self.authorized_client_1.force_login(self.authorized_user)
         cache.clear()
 
     def test_pages_uses_correct_template(self):
@@ -190,14 +193,21 @@ class PostPagesTests(TestCase):
         self.assertNotEqual(
             response_1_guest.content, response_3_guest.content)
 
-    def test_create_and_delete_follow(self):
-        """Авторизованный пользователь может подписываться на других
-        пользователей и удалять их из подписок."""
+    def test_authorized_user_can_subscribe(self):
+        """Авторизованный пользователь может
+        подписываться на других пользователей."""
         count_1 = Follow.objects.all().count()
         self.authorized_client.get(reverse(
             'posts:profile_follow', kwargs={'username': self.user2.username}))
         count_2 = Follow.objects.all().count()
         self.assertEqual(count_1 + 1, count_2)
+
+    def test_authorized_user_delete_subscriptions(self):
+        """Авторизованный пользователь может удалять
+        пользователей из подписок."""
+        count_1 = Follow.objects.all().count()
+        self.authorized_client.get(reverse(
+            'posts:profile_follow', kwargs={'username': self.user2.username}))
         self.authorized_client.get(reverse(
             'posts:profile_unfollow',
             kwargs={'username': self.user2.username}))
@@ -205,25 +215,58 @@ class PostPagesTests(TestCase):
         self.assertEqual(count_2, count_1)
 
     def test_new_post_appears_in_feed(self):
-        """Новая запись пользователя появляется в ленте тех, кто на него
-        подписан и не появляется в ленте тех, кто не подписан."""
+        """Новая запись пользователя появляется
+        в ленте тех, кто на него подписан."""
         post = Post.objects.create(
             author=self.user,
             group=self.group,
             text='test_text'
         )
-        self.authorized_user = User.objects.create_user(username='warrior')
-        self.authorized_client_1 = Client()
-        self.authorized_client_1.force_login(self.authorized_user)
         self.authorized_client_1.get(
             reverse('posts:profile_follow',
                     kwargs={'username': self.user.username}))
         response = self.authorized_client_1.get(reverse('posts:follow_index'))
         object_list = response.context.get('page_obj')
         self.assertIn(post, object_list)
+
+    def test_new_post_appears_in_feed(self):
+        """Новая запись пользователя не появляется
+          в ленте тех, кто не подписан."""
+        post = Post.objects.create(
+            author=self.user,
+            group=self.group,
+            text='test_text'
+        )
+        self.authorized_client_1.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.user.username}))
         response = self.authorized_client.get(reverse('posts:follow_index'))
         object_list = response.context.get('page_obj')
         self.assertNotIn(post, object_list)
+
+    def test_check_group_in_pages(self):
+        """Пост появляется на главной странице сайта
+        и на странице выбранной группы."""
+        post = Post.objects.get(group=self.post.group)
+        page_list = [
+            reverse('posts:index'),
+            reverse('posts:group_list', kwargs={'slug': self.group.slug}),
+        ]
+        for page in page_list:
+            response = self.guest_client.get(page)
+            object_list = response.context.get('page_obj')
+            self.assertIn(post, object_list)
+
+    def test_authorized_user_comment(self):
+        """Только авторизированный пользователь может комментировать посты."""
+        form_data = {
+            'text': 'Комментарий к посту',
+        }
+        response = self.authorized_client.post(reverse(
+            'posts:add_comment', kwargs={'post_id': self.post.id}),
+            follow=True,
+            data=form_data)
+        self.assertContains(response, 'Комментарий к посту')
 
 
 class PaginatorViewsTest(TestCase):
