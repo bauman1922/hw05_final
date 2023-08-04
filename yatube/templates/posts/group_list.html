@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
+{% block title %} {{ title }}  {% endblock %}
 {% block content %}
 {% load thumbnail %}
-<h1>{{ group.title }}</h1>
-<p>{{ group.description }}</p>
+<h1>{% block header %} {{ group.title }} {% endblock %}</h1>
+<p>{{ group.description|linebreaks }}</p>
   {% for post in page_obj %}
   {% include 'includes/post_card.html' %}
   {% endfor %}

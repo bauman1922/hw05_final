@@ -25,22 +25,19 @@ def group_posts(request, slug):
         'group': group,
         'title': title,
     }
-    context.update(get_paginator(
-        group.posts.select_related('author'), request))
+    context.update(get_paginator(group.posts.all(), request))
     return render(request, template, context)
 
 
 def profile(request, username):
     template = 'posts/profile.html'
     author = get_object_or_404(User, username=username)
-    counter = author.posts.select_related('author').count()
     title = f'Профайл пользователя {username}'
     following = request.user.is_authenticated and Follow.objects.filter(
         user=request.user, author=author).exists()
     context = {
         'title': title,
         'author': author,
-        'counter': counter,
         'following': following,
     }
     context.update(get_paginator(author.posts.all(), request))
@@ -50,16 +47,12 @@ def profile(request, username):
 def post_detail(request, post_id):
     template = 'posts/post_detail.html'
     post = get_object_or_404(Post, pk=post_id)
-    post_author = post.author
-    post_count = post_author.posts.count()
     title = f'Пост {post.text[:30]}'
     comments = post.comments.all()
     comment_form = CommentForm(request.POST or None)
     context = {
         'post': post,
         'title': title,
-        'post_author': post_author,
-        'post_count': post_count,
         'comment_form': comment_form,
         'comments': comments,
     }

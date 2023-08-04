@@ -1,10 +1,10 @@
 {% extends "base.html" %}
+{% block title %} {{ title }} {% endblock %}
 {% block content %}
 {% load thumbnail %}
-    <title>{{ title }}</title>
     <div class="mb-5">
         <h1>Все посты пользователя {{ author }}</h1>
-        <h3>Всего постов: {{ counter }}</h3>
+        <h3>Всего постов: {{ author.posts.count }}</h3>
         {% if user.is_authenticated and author != user %}
         {% if following %}
           <a
@@ -26,5 +26,5 @@
           {% include 'includes/post_card.html' %}
         {% endfor %}
         {% include 'includes/paginator.html' %}  
-      </div>
+    </div>
 {% endblock %}
